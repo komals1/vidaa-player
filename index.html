@@ -1,1 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <title>VIDAA Audio Test</title>
+
+    <style>
+        body {
+            background: #111;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 30px;
+        }
+
+        h1 {
+            font-size: 32px;
+        }
+
+        input {
+            width: 90%;
+            max-width: 900px;
+            padding: 15px;
+            font-size: 18px;
+            margin: 10px;
+        }
+
+        button {
+            padding: 15px 25px;
+            margin: 8px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        video {
+            width: 90%;
+            max-width: 1000px;
+            margin-top: 25px;
+            background: black;
+        }
+
+        #status {
+            margin-top: 20px;
+            font-size: 20px;
+        }
+
+        .track {
+            margin: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>VIDAA Audio Test</h1>
+
+    <input
+        id="url"
+        type="text"
+        placeholder="Paste Seedr video URL here"
+    >
+
+    <br>
+
+    <button onclick="playVideo()">▶ PLAY</button>
+
+    <div id="status">
+        Waiting for video...
+    </div>
+
+    <video id="video" controls></video>
+
+    <h2>Audio Tracks</h2>
+
+    <div id="tracks">
+        No tracks detected yet.
+    </div>
+
+    <script>
+
+        const video = document.getElementById("video");
+        const status = document.getElementById("status");
+        const tracks = document.getElementById("tracks");
+
+        function playVideo() {
+
+            const url = document.getElementById("url").value.trim();
+
+            if (!url) {
+                alert("Please enter a video URL.");
+                return;
+            }
+
+            status.innerText = "Loading video...";
+
+            video.src = url;
+            video.load();
+
+            video.play().catch(function(error) {
+                status.innerText =
+                    "Video loaded. Press PLAY on the video.";
+            });
+
+            setTimeout(checkAudioTracks, 2000);
+        }
+
+
+        function checkAudioTracks() {
+
+            tracks.innerHTML = "";
+
+            if (!video.audioTracks) {
+
+                tracks.innerHTML =
+                    "<p>❌ VIDAA does not expose audioTracks.</p>";
+
+                status.innerText =
+                    "audioTracks API not available.";
+
+                return;
+            }
+
+
+            const count = video.audioTracks.length;
+
+            status.innerText =
+                "Audio tracks detected: " + count;
+
+
+            if (count === 0) {
+
+                tracks.innerHTML =
+                    "<p>❌ No audio tracks detected.</p>";
+
+                return;
+            }
+
+
+            for (let i = 0; i < count; i++) {
+
+                const track = video.audioTracks[i];
+
+                const button =
+                    document.createElement("button");
+
+                button.className = "track";
+
+                button.innerText =
+                    "Audio " + (i + 1) +
+                    " — " +
+                    (track.label || "Unknown");
+
+
+                button.onclick = function() {
+
+                    for (let j = 0;
+                         j < video.audioTracks.length;
+                         j++) {
+
+                        video.audioTracks[j].enabled =
+                            false;
+                    }
+
+                    track.enabled = true;
+
+                    status.innerText =
+                        "Selected: " +
+                        (track.label || "Audio " + (i + 1));
+                };
+
+
+                tracks.appendChild(button);
+            }
+        }
+
+    </script>
+
+</body>
+</html>
