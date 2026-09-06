@@ -1,96 +1,148 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Seedr Fetch Test</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VIDAA Player Test</title>
 
-<style>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.15"></script>
+
+  <style>
     body {
-        font-family: Arial, sans-serif;
-        background: #111;
-        color: white;
-        padding: 20px;
+      margin: 0;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
     }
 
-    textarea {
-        width: 100%;
-        height: 120px;
-        box-sizing: border-box;
-        font-size: 14px;
-        margin-bottom: 10px;
+    #version {
+      position: fixed;
+      top: 8px;
+      left: 8px;
+      z-index: 9999;
+      background: rgba(0,0,0,.7);
+      padding: 5px 8px;
+      font-size: 13px;
+    }
+
+    #app {
+      max-width: 1000px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+
+    video {
+      width: 100%;
+      background: black;
+    }
+
+    #status {
+      margin-top: 15px;
+      padding: 12px;
+      background: #222;
+      white-space: pre-wrap;
     }
 
     button {
-        font-size: 18px;
-        padding: 12px 20px;
-        margin-bottom: 15px;
+      margin: 10px 5px 0 0;
+      padding: 10px 15px;
+      cursor: pointer;
     }
-
-    #result {
-        white-space: pre-wrap;
-        background: #222;
-        padding: 15px;
-        border-radius: 8px;
-    }
-</style>
+  </style>
 </head>
 
 <body>
 
-<h2>Seedr → JavaScript Fetch Test</h2>
+<div id="version">TEST VERSION 1.0</div>
 
-<textarea id="url" placeholder="Paste your Seedr direct URL here"></textarea>
+<div id="app">
 
-<br>
+  <h2>HLS Player Test</h2>
 
-<button onclick="testFetch()">TEST FETCH</button>
+  <video id="video" controls></video>
 
-<div id="result">Waiting...</div>
+  <div id="tracks"></div>
+
+  <div id="status">Waiting...</div>
+
+</div>
 
 <script>
+const video = document.getElementById("video");
+const tracksDiv = document.getElementById("tracks");
+const status = document.getElementById("status");
 
-async function testFetch() {
+let hls;
 
-    const url = document.getElementById("url").value.trim();
-    const result = document.getElementById("result");
-
-    if (!url) {
-        result.textContent = "❌ Please paste the Seedr URL.";
-        return;
-    }
-
-    result.textContent =
-        "⏳ Testing JavaScript access to the Seedr file...\n\n" +
-        "This may take a few seconds.";
-
-    try {
-
-        const response = await fetch(url, {
-            method: "GET",
-            mode: "cors"
-        });
-
-        result.textContent =
-            "✅ FETCH SUCCEEDED!\n\n" +
-            "Status: " + response.status + "\n" +
-            "Response type: " + response.type + "\n" +
-            "Content-Type: " + response.headers.get("content-type") + "\n" +
-            "Content-Length: " + response.headers.get("content-length") + "\n\n" +
-            "🎉 This is VERY promising.\n" +
-            "JavaScript can access the Seedr file.";
-
-    } catch (error) {
-
-        result.textContent =
-            "❌ FETCH FAILED\n\n" +
-            "Error:\n" +
-            error.message +
-            "\n\n" +
-            "This probably means Seedr does not allow CORS access.";
-    }
+function log(text) {
+  status.textContent += "\n" + text;
+  console.log(text);
 }
 
+/*
+  IMPORTANT:
+  We will paste the Seedr HLS master URL here
+  AFTER the page is ready.
+*/
+const streamUrl = "";
+
+if (Hls.isSupported()) {
+
+  log("hls.js is supported.");
+
+  hls = new Hls();
+
+  hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
+
+    log("MANIFEST_PARSED");
+    log("Video levels: " + data.levels.length);
+    log("Audio tracks: " + hls.audioTracks.length);
+
+    tracksDiv.innerHTML = "<h3>Audio Tracks</h3>";
+
+    hls.audioTracks.forEach((track, index) => {
+
+      const button = document.createElement("button");
+
+      button.textContent =
+        (track.name || "Track " + index) +
+        " [" + (track.lang || "unknown") + "]";
+
+      button.onclick = function() {
+
+        log("Switching to audio track " + index);
+
+        hls.audioTrack = index;
+      };
+
+      tracksDiv.appendChild(button);
+    });
+  });
+
+  hls.on(Hls.Events.AUDIO_TRACK_SWITCHED, function(event, data) {
+    log("Audio switched to track ID: " + data.id);
+  });
+
+  hls.on(Hls.Events.ERROR, function(event, data) {
+    console.log("HLS ERROR:", data);
+    log("HLS ERROR: " + data.type + " / " + data.details);
+  });
+
+  if (streamUrl) {
+    hls.loadSource(streamUrl);
+    hls.attachMedia(video);
+  } else {
+    log("No stream URL yet.");
+  }
+
+} else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+
+  log("Native HLS supported.");
+
+} else {
+
+  log("HLS is NOT supported.");
+}
 </script>
 
 </body>
