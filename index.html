@@ -1,2082 +1,326 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>VIDAA MKV Player</title>
-
-<style>
-
-* {
-    box-sizing: border-box;
-}
-
-html,
-body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    min-height: 100%;
-    background: #080808;
-    color: #ffffff;
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-#version {
-    position: fixed;
-    top: 8px;
-    left: 8px;
-    z-index: 99999;
-
-    background: rgba(0, 0, 0, 0.8);
-    padding: 6px 10px;
-
-    border-radius: 4px;
-
-    font-size: 12px;
-}
-
-#app {
-    width: 100%;
-    max-width: 1200px;
-
-    margin: 55px auto 0;
-
-    padding: 20px;
-}
-
-h1 {
-    margin: 0 0 15px;
-    font-size: 24px;
-}
-
-#urlBox {
-    display: flex;
-    gap: 8px;
-
-    width: 100%;
-
-    margin-bottom: 15px;
-}
-
-#url {
-    flex: 1;
-
-    min-width: 0;
-
-    padding: 13px;
-
-    background: #181818;
-    color: white;
-
-    border: 1px solid #444;
-
-    border-radius: 5px;
-
-    outline: none;
-}
-
-#url:focus {
-    border-color: #777;
-}
-
-button {
-    border: 0;
-
-    border-radius: 5px;
-
-    background: #292929;
-
-    color: white;
-
-    padding: 10px 14px;
-
-    cursor: pointer;
-
-    font-size: 14px;
-}
-
-button:hover {
-    background: #3b3b3b;
-}
-
-button:active {
-    background: #4a4a4a;
-}
-
-#loadBtn {
-    background: #1769aa;
-}
-
-#loadBtn:hover {
-    background: #2181c7;
-}
-
-#player {
-    position: relative;
-
-    width: 100%;
-
-    background: black;
-
-    overflow: hidden;
-
-    border-radius: 6px;
-}
-
-#screen {
-    display: block;
-
-    width: 100%;
-
-    height: auto;
-
-    min-height: 250px;
-
-    aspect-ratio: 16 / 9;
-
-    background: black;
-}
-
-#controls {
-    display: flex;
-
-    align-items: center;
-
-    gap: 8px;
-
-    padding: 8px;
-
-    background: #151515;
-}
-
-#time {
-    font-size: 13px;
-
-    white-space: nowrap;
-}
-
-#seek {
-    flex: 1;
-
-    min-width: 50px;
-}
-
-#volume {
-    width: 90px;
-}
-
-#audioMenu {
-    position: absolute;
-
-    right: 10px;
-
-    bottom: 60px;
-
-    width: 280px;
-
-    max-height: 300px;
-
-    overflow-y: auto;
-
-    background: rgba(20, 20, 20, 0.97);
-
-    border: 1px solid #555;
-
-    border-radius: 6px;
-
-    padding: 8px;
-
-    display: none;
-
-    z-index: 20;
-}
-
-#audioMenu.open {
-    display: block;
-}
-
-.audioTitle {
-    font-weight: bold;
-
-    padding: 8px;
-
-    border-bottom: 1px solid #444;
-
-    margin-bottom: 5px;
-}
-
-.audioTrack {
-    width: 100%;
-
-    text-align: left;
-
-    margin: 3px 0;
-}
-
-.audioTrack.active {
-    background: #1769aa;
-}
-
-#info {
-    margin-top: 10px;
-
-    padding: 12px;
-
-    background: #111;
-
-    border-radius: 5px;
-
-    font-size: 13px;
-
-    line-height: 1.6;
-}
-
-#status {
-    margin-top: 10px;
-
-    padding: 12px;
-
-    background: #151515;
-
-    border-radius: 5px;
-
-    white-space: pre-wrap;
-
-    font-family: monospace;
-
-    font-size: 12px;
-
-    line-height: 1.5;
-
-    max-height: 250px;
-
-    overflow-y: auto;
-}
-
-@media (max-width: 700px) {
-
-    #controls {
-        flex-wrap: wrap;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">  <title>VIDAA Player - Video.js Test</title>  <link
+    href="https://vjs.zencdn.net/8.23.4/video-js.css"
+    rel="stylesheet"
+  >  <style>
+    * {
+      box-sizing: border-box;
     }
 
-    #time {
-        order: 2;
+    body {
+      margin: 0;
+      background: #111;
+      color: #eee;
+      font-family: Arial, sans-serif;
+      padding: 20px;
     }
 
-    #seek {
-        order: 3;
-
-        width: 100%;
-        flex-basis: 100%;
+    .version {
+      position: fixed;
+      top: 8px;
+      left: 10px;
+      font-size: 12px;
+      color: #aaa;
+      z-index: 9999;
     }
 
-    #volume {
-        width: 70px;
+    h1 {
+      margin-top: 25px;
+      font-size: 22px;
     }
 
-}
+    .url-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
 
-</style>
-</head>
+    #url {
+      flex: 1;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background: #222;
+      color: white;
+      font-size: 14px;
+    }
 
+    button {
+      padding: 10px 16px;
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #2d7ff9;
+      color: white;
+      font-weight: bold;
+    }
 
-<body>
+    button:hover {
+      opacity: 0.85;
+    }
 
-<div id="version">
-    VIDAA PLAYER v2.0.0
+    .player-wrap {
+      width: 100%;
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    .video-js {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16 / 9;
+    }
+
+    .panel {
+      margin-top: 15px;
+      padding: 15px;
+      background: #1b1b1b;
+      border-radius: 8px;
+    }
+
+    #status {
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #bbb;
+    }
+
+    #audioTracks {
+      margin-top: 10px;
+    }
+
+    .track {
+      display: block;
+      width: 100%;
+      text-align: left;
+      margin: 6px 0;
+      background: #292929;
+      border: 1px solid #444;
+    }
+
+    .track.active {
+      background: #2d7ff9;
+    }
+
+    .small {
+      color: #888;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+  </style></head><body>  <div class="version">VIDAA PLAYER v3.0.0</div>  <div class="player-wrap"><h1>Seedr MKV → Video.js Test</h1>
+
+<div class="url-row">
+  <input
+    id="url"
+    type="text"
+    placeholder="Paste your complete Seedr MKV URL here"
+    autocomplete="off"
+  >
+
+  <button id="loadBtn">LOAD</button>
 </div>
 
+<video
+  id="player"
+  class="video-js vjs-big-play-centered"
+  controls
+  playsinline
+  preload="auto"
+  crossorigin="anonymous"
+></video>
 
-<div id="app">
-
-    <h1>
-        MKV Player
-    </h1>
-
-
-    <div id="urlBox">
-
-        <input
-            id="url"
-            type="text"
-            placeholder="Paste Seedr full MKV URL here"
-            autocomplete="off"
-            spellcheck="false"
-        >
-
-        <button id="loadBtn">
-            LOAD
-        </button>
-
-    </div>
-
-
-    <div id="player">
-
-        <canvas id="screen"></canvas>
-
-
-        <div id="audioMenu">
-
-            <div class="audioTitle">
-                Audio Track
-            </div>
-
-            <div id="audioTracks"></div>
-
-        </div>
-
-
-        <div id="controls">
-
-            <button id="playBtn">
-                ▶
-            </button>
-
-
-            <button id="backBtn">
-                -10
-            </button>
-
-
-            <button id="forwardBtn">
-                +10
-            </button>
-
-
-            <span id="time">
-                00:00 / 00:00
-            </span>
-
-
-            <input
-                id="seek"
-                type="range"
-                min="0"
-                max="100"
-                value="0"
-            >
-
-
-            <button id="audioBtn">
-                🎵
-            </button>
-
-
-            <input
-                id="volume"
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value="1"
-            >
-
-
-            <button id="fullscreenBtn">
-                ⛶
-            </button>
-
-        </div>
-
-    </div>
-
-
-    <div id="info">
-        No video loaded.
-    </div>
-
-
-    <div id="status">
-        Waiting...
-    </div>
-
+<div class="panel">
+  <strong>Status</strong>
+  <div id="status">Waiting for URL...</div>
 </div>
 
+<div class="panel">
+  <strong>Audio Tracks</strong>
+  <div id="audioTracks">
+    No tracks detected yet.
+  </div>
 
-<script type="module">
+  <div class="small">
+    If the MKV exposes multiple audio streams to the browser,
+    they should appear here.
+  </div>
+</div>
 
+  </div>  <script src="https://vjs.zencdn.net/8.23.4/video.min.js"></script>  <script>
+    const urlInput = document.getElementById("url");
+    const loadBtn = document.getElementById("loadBtn");
+    const status = document.getElementById("status");
+    const audioTracksDiv = document.getElementById("audioTracks");
 
-/*
-=========================================================
- WEB-DEMUXER
-=========================================================
-*/
+    let player = null;
 
-import {
-    WebDemuxer
-} from "https://cdn.jsdelivr.net/npm/web-demuxer/+esm";
-
-
-/*
-=========================================================
- ELEMENTS
-=========================================================
-*/
-
-const urlInput =
-    document.getElementById("url");
-
-const loadBtn =
-    document.getElementById("loadBtn");
-
-const canvas =
-    document.getElementById("screen");
-
-const ctx =
-    canvas.getContext("2d");
-
-const playBtn =
-    document.getElementById("playBtn");
-
-const backBtn =
-    document.getElementById("backBtn");
-
-const forwardBtn =
-    document.getElementById("forwardBtn");
-
-const fullscreenBtn =
-    document.getElementById("fullscreenBtn");
-
-const seek =
-    document.getElementById("seek");
-
-const volume =
-    document.getElementById("volume");
-
-const audioBtn =
-    document.getElementById("audioBtn");
-
-const audioMenu =
-    document.getElementById("audioMenu");
-
-const audioTracksDiv =
-    document.getElementById("audioTracks");
-
-const timeLabel =
-    document.getElementById("time");
-
-const status =
-    document.getElementById("status");
-
-const info =
-    document.getElementById("info");
-
-
-/*
-=========================================================
- PLAYER STATE
-=========================================================
-*/
-
-let demuxer = null;
-
-let mediaInfo = null;
-
-let videoDecoder = null;
-
-let audioDecoder = null;
-
-let audioContext = null;
-
-let audioGain = null;
-
-let videoReader = null;
-
-let audioReader = null;
-
-let duration = 0;
-
-let currentTime = 0;
-
-let playing = false;
-
-let selectedAudio = 0;
-
-let audioStreams = [];
-
-let videoStreams = [];
-
-let loading = false;
-
-
-/*
-=========================================================
- WASM
-=========================================================
-*/
-
-const WASM_URL =
-    "https://cdn.jsdelivr.net/npm/web-demuxer@latest/dist/wasm-files/web-demuxer.wasm";
-
-
-/*
-=========================================================
- LOGGING
-=========================================================
-*/
-
-function log(message) {
-
-    status.textContent +=
-        "\n" + message;
-
-    status.scrollTop =
-        status.scrollHeight;
-
-    console.log(message);
-}
-
-
-function clearLog() {
-
-    status.textContent = "";
-
-}
-
-
-/*
-=========================================================
- TIME
-=========================================================
-*/
-
-function formatTime(seconds) {
-
-    if (!Number.isFinite(seconds)) {
-
-        return "00:00";
-
+    function log(message) {
+      status.textContent += "\n" + message;
+      console.log(message);
     }
 
-    seconds =
-        Math.max(0, seconds);
-
-
-    const hours =
-        Math.floor(seconds / 3600);
-
-
-    const minutes =
-        Math.floor(
-            (seconds % 3600) / 60
-        );
-
-
-    const secondsPart =
-        Math.floor(seconds % 60);
-
-
-    if (hours > 0) {
-
-        return (
-            String(hours).padStart(2, "0") +
-            ":" +
-            String(minutes).padStart(2, "0") +
-            ":" +
-            String(secondsPart).padStart(2, "0")
-        );
-
+    function setStatus(message) {
+      status.textContent = message;
+      console.log(message);
     }
 
+    function showAudioTracks() {
+      audioTracksDiv.innerHTML = "";
 
-    return (
-        String(minutes).padStart(2, "0") +
-        ":" +
-        String(secondsPart).padStart(2, "0")
-    );
-
-}
-
-
-function updateTime() {
-
-    timeLabel.textContent =
-        formatTime(currentTime) +
-        " / " +
-        formatTime(duration);
-
-
-    if (duration > 0) {
-
-        seek.value =
-            (currentTime / duration) * 100;
-
-    }
-
-}
-
-
-/*
-=========================================================
- CHECK BROWSER
-=========================================================
-*/
-
-function checkBrowserSupport() {
-
-    log(
-        "Checking browser capabilities..."
-    );
-
-
-    if (!("VideoDecoder" in window)) {
-
-        throw new Error(
-            "VideoDecoder / WebCodecs is not supported by this browser."
-        );
-
-    }
-
-
-    log(
-        "✓ VideoDecoder available."
-    );
-
-
-    if (!("AudioDecoder" in window)) {
-
-        throw new Error(
-            "AudioDecoder / WebCodecs is not supported by this browser."
-        );
-
-    }
-
-
-    log(
-        "✓ AudioDecoder available."
-    );
-
-}
-
-
-/*
-=========================================================
- CREATE DEMUXER
-=========================================================
-*/
-
-async function createDemuxer() {
-
-    if (demuxer) {
-
-        try {
-
-            if (
-                typeof demuxer.destroy ===
-                "function"
-            ) {
-
-                demuxer.destroy();
-
-            }
-
-        } catch (error) {
-
-            console.warn(
-                "Old demuxer cleanup failed",
-                error
-            );
-
-        }
-
-    }
-
-
-    log(
-        "Creating MKV demuxer..."
-    );
-
-
-    demuxer =
-        new WebDemuxer({
-
-            wasmFilePath:
-                WASM_URL
-
-        });
-
-
-    log(
-        "✓ Demuxer created."
-    );
-
-}
-
-
-/*
-=========================================================
- LOAD MKV
-=========================================================
-*/
-
-async function loadVideo() {
-
-    if (loading) {
-
+      if (!player) {
+        audioTracksDiv.textContent = "Player not created.";
         return;
+      }
 
-    }
+      const tracks = player.audioTracks();
 
+      log("Video.js audioTracks count: " + tracks.length);
 
-    const url =
-        urlInput.value.trim();
-
-
-    if (!url) {
-
-        alert(
-            "Paste the Seedr MKV URL first."
-        );
-
+      if (!tracks.length) {
+        audioTracksDiv.textContent =
+          "No audio tracks exposed by Video.js.";
         return;
+      }
 
-    }
+      for (let i = 0; i < tracks.length; i++) {
 
+        const track = tracks[i];
 
-    loading = true;
+        const button = document.createElement("button");
+        button.className = "track";
 
-    loadBtn.disabled = true;
+        const label =
+          track.label ||
+          track.language ||
+          ("Audio Track " + (i + 1));
 
-    clearLog();
+        button.textContent =
+          (i + 1) + ". " +
+          label +
+          (track.language ? " [" + track.language + "]" : "");
 
-
-    try {
-
-        log(
-            "Starting MKV player..."
-        );
-
-
-        checkBrowserSupport();
-
-
-        log(
-            "Creating demuxer..."
-        );
-
-
-        await createDemuxer();
-
-
-        log(
-            "Opening MKV URL..."
-        );
-
-
-        await demuxer.load(url);
-
-
-        log(
-            "✓ MKV opened."
-        );
-
-
-        log(
-            "Reading media information..."
-        );
-
-
-        mediaInfo =
-            await demuxer.getMediaInfo();
-
-
-        console.log(
-            "FULL MEDIA INFO:",
-            mediaInfo
-        );
-
-
-        duration =
-            Number(
-                mediaInfo.duration
-            ) || 0;
-
-
-        const streams =
-            mediaInfo.streams || [];
-
-
-        videoStreams =
-            streams.filter(
-                stream =>
-                    stream.codec_type_string ===
-                    "video"
-            );
-
-
-        audioStreams =
-            streams.filter(
-                stream =>
-                    stream.codec_type_string ===
-                    "audio"
-            );
-
-
-        log(
-            "Video streams: " +
-            videoStreams.length
-        );
-
-
-        log(
-            "Audio streams: " +
-            audioStreams.length
-        );
-
-
-        info.innerHTML =
-            "<b>Duration:</b> " +
-            formatTime(duration) +
-
-            "<br><b>Video streams:</b> " +
-            videoStreams.length +
-
-            "<br><b>Audio streams:</b> " +
-            audioStreams.length;
-
-
-        if (!videoStreams.length) {
-
-            throw new Error(
-                "No video stream was found."
-            );
-
+        if (track.enabled) {
+          button.classList.add("active");
         }
 
+        button.onclick = function() {
 
-        buildAudioMenu();
+          for (let j = 0; j < tracks.length; j++) {
+            tracks[j].enabled = false;
+          }
 
+          track.enabled = true;
 
-        await setupVideoDecoder();
+          showAudioTracks();
 
+          log("Selected audio track: " + label);
+        };
 
-        await setupAudioDecoder();
-
-
-        log(
-            "✓ Player engine initialized."
-        );
-
-
-        log(
-            "Press PLAY to start."
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "PLAYER ERROR:",
-            error
-        );
-
-
-        log("");
-        log(
-            "❌ PLAYER ERROR"
-        );
-
-
-        log(
-            error.message ||
-            String(error)
-        );
-
-
-    } finally {
-
-        loading = false;
-
-        loadBtn.disabled = false;
-
+        audioTracksDiv.appendChild(button);
+      }
     }
 
-}
+    function createPlayer(url) {
 
+      if (player) {
+        try {
+          player.dispose();
+        } catch (e) {}
+      }
 
-/*
-=========================================================
- AUDIO TRACK MENU
-=========================================================
-*/
+      audioTracksDiv.textContent = "Loading...";
 
-function buildAudioMenu() {
+      setStatus("Creating Video.js player...");
 
-    audioTracksDiv.innerHTML = "";
+      player = videojs("player", {
+        controls: true,
+        preload: "auto",
+        fluid: true,
+        autoplay: false,
+        liveui: false
+      });
 
+      player.on("loadstart", function() {
+        log("Load started.");
+      });
 
-    if (!audioStreams.length) {
+      player.on("loadedmetadata", function() {
+        log("Metadata loaded.");
+        log("Duration: " + player.duration());
 
-        audioTracksDiv.innerHTML =
-            "<div style='padding:8px'>" +
-            "No audio tracks found." +
-            "</div>";
+        setTimeout(showAudioTracks, 500);
+      });
 
+      player.on("loadeddata", function() {
+        log("Video data loaded.");
+      });
+
+      player.on("canplay", function() {
+        log("Video can play.");
+      });
+
+      player.on("play", function() {
+        log("Playback started.");
+      });
+
+      player.on("error", function() {
+
+        const error = player.error();
+
+        if (error) {
+          log(
+            "PLAYER ERROR: " +
+            error.code +
+            " - " +
+            error.message
+          );
+        } else {
+          log("PLAYER ERROR: unknown");
+        }
+      });
+
+      player.on("audioTrackChange", function() {
+        log("Audio track changed.");
+        showAudioTracks();
+      });
+
+      setStatus("Loading Seedr MKV...");
+
+      player.src({
+        src: url,
+        type: "video/x-matroska"
+      });
+
+      player.load();
+
+      log("Source:");
+      log(url.split("?")[0]);
+
+      log("Waiting for browser to decode MKV...");
+    }
+
+    loadBtn.addEventListener("click", function() {
+
+      const url = urlInput.value.trim();
+
+      if (!url) {
+        alert("Paste the complete Seedr MKV URL first.");
         return;
+      }
 
-    }
+      createPlayer(url);
+    });
 
+    urlInput.addEventListener("keydown", function(event) {
 
-    audioStreams.forEach(
-        (track, index) => {
+      if (event.key === "Enter") {
+        loadBtn.click();
+      }
 
-            const button =
-                document.createElement("button");
+    });
 
-
-            button.className =
-                "audioTrack";
-
-
-            if (
-                index ===
-                selectedAudio
-            ) {
-
-                button.classList.add(
-                    "active"
-                );
-
-            }
-
-
-            let language =
-                track.language;
-
-
-            if (!language) {
-
-                language =
-                    track.tags?.language;
-
-            }
-
-
-            if (!language) {
-
-                language =
-                    "und";
-
-            }
-
-
-            let title =
-                track.title;
-
-
-            if (!title) {
-
-                title =
-                    track.tags?.title;
-
-            }
-
-
-            if (!title) {
-
-                title =
-                    "Audio Track " +
-                    (index + 1);
-
-            }
-
-
-            button.textContent =
-                title +
-                " (" +
-                language +
-                ")";
-
-
-            button.onclick =
-                async function() {
-
-                    await selectAudioTrack(
-                        index
-                    );
-
-                };
-
-
-            audioTracksDiv.appendChild(
-                button
-            );
-
-        }
-    );
-
-}
-
-
-/*
-=========================================================
- AUDIO TRACK SELECTION
-=========================================================
-*/
-
-async function selectAudioTrack(index) {
-
-    if (
-        index < 0 ||
-        index >= audioStreams.length
-    ) {
-
-        return;
-
-    }
-
-
-    selectedAudio =
-        index;
-
-
-    document
-        .querySelectorAll(
-            ".audioTrack"
-        )
-        .forEach(
-            button =>
-                button.classList.remove(
-                    "active"
-                )
-        );
-
-
-    const buttons =
-        document.querySelectorAll(
-            ".audioTrack"
-        );
-
-
-    if (buttons[index]) {
-
-        buttons[index].classList.add(
-            "active"
-        );
-
-    }
-
-
-    log(
-        "Selected audio track: " +
-        (index + 1)
-    );
-
-
-    /*
-     * The exact stream-selection API
-     * depends on the Web-Demuxer version.
-     *
-     * We deliberately don't pretend this
-     * part is complete until we inspect
-     * what your MKV reports.
-     */
-
-
-    if (playing) {
-
-        await restartFromCurrentPosition();
-
-    }
-
-}
-
-
-/*
-=========================================================
- VIDEO DECODER
-=========================================================
-*/
-
-async function setupVideoDecoder() {
-
-    if (videoDecoder) {
-
-        try {
-
-            videoDecoder.close();
-
-        } catch {}
-
-    }
-
-
-    log(
-        "Getting video decoder configuration..."
-    );
-
-
-    const config =
-        await demuxer.getDecoderConfig(
-            "video"
-        );
-
-
-    console.log(
-        "VIDEO CONFIG:",
-        config
-    );
-
-
-    log(
-        "Video codec: " +
-        (
-            config.codec ||
-            "unknown"
-        )
-    );
-
-
-    videoDecoder =
-        new VideoDecoder({
-
-            output(frame) {
-
-                if (
-                    !canvas.width ||
-                    !canvas.height
-                ) {
-
-                    canvas.width =
-                        frame.displayWidth;
-
-                    canvas.height =
-                        frame.displayHeight;
-
-                }
-
-
-                if (
-                    canvas.width !==
-                    frame.displayWidth ||
-
-                    canvas.height !==
-                    frame.displayHeight
-                ) {
-
-                    canvas.width =
-                        frame.displayWidth;
-
-                    canvas.height =
-                        frame.displayHeight;
-
-                }
-
-
-                ctx.drawImage(
-                    frame,
-                    0,
-                    0,
-                    canvas.width,
-                    canvas.height
-                );
-
-
-                currentTime =
-                    frame.timestamp /
-                    1000000;
-
-
-                updateTime();
-
-
-                frame.close();
-
-            },
-
-
-            error(error) {
-
-                console.error(
-                    "VIDEO DECODER ERROR:",
-                    error
-                );
-
-
-                log(
-                    "Video decoder error: " +
-                    (
-                        error.message ||
-                        error
-                    )
-                );
-
-            }
-
-        });
-
-
-    videoDecoder.configure(
-        config
-    );
-
-
-    log(
-        "✓ Video decoder ready."
-    );
-
-}
-
-
-/*
-=========================================================
- AUDIO DECODER
-=========================================================
-*/
-
-async function setupAudioDecoder() {
-
-    if (!audioStreams.length) {
-
-        log(
-            "No audio stream available."
-        );
-
-        return;
-
-    }
-
-
-    if (audioDecoder) {
-
-        try {
-
-            audioDecoder.close();
-
-        } catch {}
-
-    }
-
-
-    log(
-        "Getting audio decoder configuration..."
-    );
-
-
-    const config =
-        await demuxer.getDecoderConfig(
-            "audio"
-        );
-
-
-    console.log(
-        "AUDIO CONFIG:",
-        config
-    );
-
-
-    log(
-        "Audio codec: " +
-        (
-            config.codec ||
-            "unknown"
-        )
-    );
-
-
-    if (!audioContext) {
-
-        audioContext =
-            new AudioContext();
-
-    }
-
-
-    if (!audioGain) {
-
-        audioGain =
-            audioContext.createGain();
-
-
-        audioGain.connect(
-            audioContext.destination
-        );
-
-    }
-
-
-    audioGain.gain.value =
-        Number(volume.value);
-
-
-    audioDecoder =
-        new AudioDecoder({
-
-            output(data) {
-
-                /*
-                 * Audio playback pipeline
-                 * will be refined after we
-                 * confirm the stream format.
-                 */
-
-                try {
-
-                    const numberOfFrames =
-                        data.numberOfFrames;
-
-                    const numberOfChannels =
-                        data.numberOfChannels;
-
-
-                    const sampleRate =
-                        data.sampleRate;
-
-
-                    const buffer =
-                        audioContext.createBuffer(
-                            numberOfChannels,
-                            numberOfFrames,
-                            sampleRate
-                        );
-
-
-                    for (
-                        let channel = 0;
-                        channel < numberOfChannels;
-                        channel++
-                    ) {
-
-                        const channelData =
-                            new Float32Array(
-                                numberOfFrames
-                            );
-
-
-                        data.copyTo(
-                            channelData,
-                            {
-                                planeIndex:
-                                    channel,
-                                format:
-                                    "f32-planar"
-                            }
-                        );
-
-
-                        buffer.copyToChannel(
-                            channelData,
-                            channel
-                        );
-
-                    }
-
-
-                    const source =
-                        audioContext.createBufferSource();
-
-
-                    source.buffer =
-                        buffer;
-
-
-                    source.connect(
-                        audioGain
-                    );
-
-
-                    source.start();
-
-
-                } catch (error) {
-
-                    console.error(
-                        "AUDIO OUTPUT ERROR:",
-                        error
-                    );
-
-                }
-
-
-                try {
-
-                    data.close();
-
-                } catch {}
-
-            },
-
-
-            error(error) {
-
-                console.error(
-                    "AUDIO DECODER ERROR:",
-                    error
-                );
-
-
-                log(
-                    "Audio decoder error: " +
-                    (
-                        error.message ||
-                        error
-                    )
-                );
-
-            }
-
-        });
-
-
-    audioDecoder.configure(
-        config
-    );
-
-
-    log(
-        "✓ Audio decoder ready."
-    );
-
-}
-
-
-/*
-=========================================================
- START PLAYBACK
-=========================================================
-*/
-
-async function startPlayback() {
-
-    if (!demuxer) {
-
-        return;
-
-    }
-
-
-    if (
-        audioContext &&
-        audioContext.state ===
-        "suspended"
-    ) {
-
-        await audioContext.resume();
-
-    }
-
-
-    playing = true;
-
-    playBtn.textContent =
-        "❚❚";
-
-
-    log(
-        "Playback started."
-    );
-
-
-    videoReader =
-        demuxer
-            .read(
-                "video",
-                currentTime
-            )
-            .getReader();
-
-
-    readVideo();
-
-
-    if (audioStreams.length) {
-
-        audioReader =
-            demuxer
-                .read(
-                    "audio",
-                    currentTime
-                )
-                .getReader();
-
-
-        readAudio();
-
-    }
-
-}
-
-
-/*
-=========================================================
- VIDEO READER
-=========================================================
-*/
-
-async function readVideo() {
-
-    if (
-        !videoReader ||
-        !playing
-    ) {
-
-        return;
-
-    }
-
-
-    try {
-
-        const result =
-            await videoReader.read();
-
-
-        if (result.done) {
-
-            playing = false;
-
-            playBtn.textContent =
-                "▶";
-
-
-            log(
-                "Video finished."
-            );
-
-            return;
-
-        }
-
-
-        const chunk =
-            result.value;
-
-
-        if (
-            videoDecoder &&
-            videoDecoder.state ===
-            "configured"
-        ) {
-
-            videoDecoder.decode(
-                chunk
-            );
-
-        }
-
-
-        if (playing) {
-
-            requestAnimationFrame(
-                readVideo
-            );
-
-        }
-
-    } catch (error) {
-
-        console.error(
-            "VIDEO READ ERROR:",
-            error
-        );
-
-
-        log(
-            "Video read error: " +
-            (
-                error.message ||
-                error
-            )
-        );
-
-    }
-
-}
-
-
-/*
-=========================================================
- AUDIO READER
-=========================================================
-*/
-
-async function readAudio() {
-
-    if (
-        !audioReader ||
-        !playing
-    ) {
-
-        return;
-
-    }
-
-
-    try {
-
-        const result =
-            await audioReader.read();
-
-
-        if (result.done) {
-
-            return;
-
-        }
-
-
-        const chunk =
-            result.value;
-
-
-        if (
-            audioDecoder &&
-            audioDecoder.state ===
-            "configured"
-        ) {
-
-            audioDecoder.decode(
-                chunk
-            );
-
-        }
-
-
-        if (playing) {
-
-            readAudio();
-
-        }
-
-    } catch (error) {
-
-        console.error(
-            "AUDIO READ ERROR:",
-            error
-        );
-
-
-        log(
-            "Audio read error: " +
-            (
-                error.message ||
-                error
-            )
-        );
-
-    }
-
-}
-
-
-/*
-=========================================================
- STOP
-=========================================================
-*/
-
-function stopPlayback() {
-
-    playing = false;
-
-
-    if (videoReader) {
-
-        try {
-
-            videoReader.cancel();
-
-        } catch {}
-
-        videoReader = null;
-
-    }
-
-
-    if (audioReader) {
-
-        try {
-
-            audioReader.cancel();
-
-        } catch {}
-
-        audioReader = null;
-
-    }
-
-
-    playBtn.textContent =
-        "▶";
-
-}
-
-
-/*
-=========================================================
- RESTART / SEEK / AUDIO CHANGE
-=========================================================
-*/
-
-async function restartFromCurrentPosition() {
-
-    const position =
-        currentTime;
-
-
-    stopPlayback();
-
-
-    if (videoDecoder) {
-
-        try {
-
-            videoDecoder.reset();
-
-        } catch {}
-
-    }
-
-
-    if (audioDecoder) {
-
-        try {
-
-            audioDecoder.reset();
-
-        } catch {}
-
-    }
-
-
-    await setupVideoDecoder();
-
-
-    if (audioStreams.length) {
-
-        await setupAudioDecoder();
-
-    }
-
-
-    currentTime =
-        position;
-
-
-    updateTime();
-
-
-    await startPlayback();
-
-}
-
-
-/*
-=========================================================
- PLAY BUTTON
-=========================================================
-*/
-
-playBtn.onclick =
-    async function() {
-
-        if (!demuxer) {
-
-            log(
-                "Load a video first."
-            );
-
-            return;
-
-        }
-
-
-        if (playing) {
-
-            stopPlayback();
-
-            return;
-
-        }
-
-
-        try {
-
-            await startPlayback();
-
-        } catch (error) {
-
-            console.error(
-                error
-            );
-
-
-            log(
-                "Playback error: " +
-                (
-                    error.message ||
-                    error
-                )
-            );
-
-        }
-
-    };
-
-
-/*
-=========================================================
- BACK 10
-=========================================================
-*/
-
-backBtn.onclick =
-    async function() {
-
-        if (!demuxer) {
-
-            return;
-
-        }
-
-
-        currentTime =
-            Math.max(
-                0,
-                currentTime - 10
-            );
-
-
-        updateTime();
-
-
-        await restartFromCurrentPosition();
-
-    };
-
-
-/*
-=========================================================
- FORWARD 10
-=========================================================
-*/
-
-forwardBtn.onclick =
-    async function() {
-
-        if (!demuxer) {
-
-            return;
-
-        }
-
-
-        currentTime =
-            Math.min(
-                duration,
-                currentTime + 10
-            );
-
-
-        updateTime();
-
-
-        await restartFromCurrentPosition();
-
-    };
-
-
-/*
-=========================================================
- SEEK BAR
-=========================================================
-*/
-
-seek.oninput =
-    function() {
-
-        if (!duration) {
-
-            return;
-
-        }
-
-
-        currentTime =
-            duration *
-            (
-                Number(seek.value) /
-                100
-            );
-
-
-        updateTime();
-
-    };
-
-
-seek.onchange =
-    async function() {
-
-        if (!demuxer) {
-
-            return;
-
-        }
-
-
-        await restartFromCurrentPosition();
-
-    };
-
-
-/*
-=========================================================
- AUDIO MENU
-=========================================================
-*/
-
-audioBtn.onclick =
-    function() {
-
-        audioMenu.classList.toggle(
-            "open"
-        );
-
-    };
-
-
-/*
-=========================================================
- VOLUME
-=========================================================
-*/
-
-volume.oninput =
-    function() {
-
-        if (audioGain) {
-
-            audioGain.gain.value =
-                Number(volume.value);
-
-        }
-
-    };
-
-
-/*
-=========================================================
- FULLSCREEN
-=========================================================
-*/
-
-fullscreenBtn.onclick =
-    async function() {
-
-        const player =
-            document.getElementById(
-                "player"
-            );
-
-
-        try {
-
-            if (
-                document.fullscreenElement
-            ) {
-
-                await document.exitFullscreen();
-
-            } else {
-
-                await player.requestFullscreen();
-
-            }
-
-        } catch (error) {
-
-            console.error(
-                "Fullscreen error:",
-                error
-            );
-
-        }
-
-    };
-
-
-/*
-=========================================================
- LOAD BUTTON
-=========================================================
-*/
-
-loadBtn.onclick =
-    async function() {
-
-        stopPlayback();
-
-
-        try {
-
-            await loadVideo();
-
-        } catch (error) {
-
-            console.error(
-                error
-            );
-
-
-            log(
-                "❌ " +
-                (
-                    error.message ||
-                    error
-                )
-            );
-
-        }
-
-    };
-
-
-/*
-=========================================================
- ENTER KEY
-=========================================================
-*/
-
-urlInput.addEventListener(
-    "keydown",
-    function(event) {
-
-        if (
-            event.key ===
-            "Enter"
-        ) {
-
-            loadBtn.click();
-
-        }
-
-    }
-);
-
-
-/*
-=========================================================
- INITIAL MESSAGE
-=========================================================
-*/
-
-log(
-    "VIDAA MKV Player v2.0.0"
-);
-
-log(
-    "Paste a Seedr MKV URL above."
-);
-
-log(
-    "The URL is kept in this browser page and is not written into the source code."
-);
-
-</script>
-
-</body>
+  </script></body>
 </html>
