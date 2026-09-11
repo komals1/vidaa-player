@@ -1,326 +1,327 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">  <title>VIDAA Player - Video.js Test</title>  <link
-    href="https://vjs.zencdn.net/8.23.4/video-js.css"
-    rel="stylesheet"
-  >  <style>
-    * {
-      box-sizing: border-box;
+  <meta charset="UTF-8" />
+  <title>Vidaa Player (Seedr-style HLS)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #121821;
+      --text: #e6edf3;
+      --muted: #9aa4b2;
+      --accent: #3b82f6;
     }
-
-    body {
+    html, body {
       margin: 0;
-      background: #111;
-      color: #eee;
-      font-family: Arial, sans-serif;
-      padding: 20px;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      height: 100%;
     }
-
     .version {
       position: fixed;
       top: 8px;
       left: 10px;
       font-size: 12px;
-      color: #aaa;
+      color: var(--muted);
       z-index: 9999;
+      background: rgba(0,0,0,0.35);
+      padding: 2px 6px;
+      border-radius: 4px;
     }
-
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px 10px 40px;
+    }
     h1 {
-      margin-top: 25px;
-      font-size: 22px;
+      font-size: 20px;
+      margin: 0 0 12px;
+      font-weight: 600;
     }
-
-    .url-row {
+    .input-row {
       display: flex;
       gap: 8px;
-      margin-bottom: 15px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
     }
-
-    #url {
-      flex: 1;
-      padding: 12px;
+    input[type="url"], input[type="text"] {
+      flex: 1 1 320px;
+      padding: 10px 12px;
       border-radius: 6px;
-      border: 1px solid #444;
-      background: #222;
-      color: white;
-      font-size: 14px;
+      border: 1px solid #2a3441;
+      background: var(--panel);
+      color: var(--text);
+      outline: none;
     }
-
+    input::placeholder {
+      color: #6b7785;
+    }
     button {
-      padding: 10px 16px;
-      border: 0;
+      padding: 10px 14px;
       border-radius: 6px;
+      border: 1px solid #2a3441;
+      background: #1f2937;
+      color: var(--text);
       cursor: pointer;
-      background: #2d7ff9;
-      color: white;
-      font-weight: bold;
+      font-weight: 600;
     }
-
-    button:hover {
-      opacity: 0.85;
+    button.primary {
+      background: var(--accent);
+      border-color: #2563eb;
     }
-
-    .player-wrap {
-      width: 100%;
-      max-width: 1100px;
-      margin: auto;
-    }
-
-    .video-js {
-      width: 100%;
-      height: auto;
+    .player-wrapper {
+      background: #000;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
       aspect-ratio: 16 / 9;
-    }
-
-    .panel {
-      margin-top: 15px;
-      padding: 15px;
-      background: #1b1b1b;
-      border-radius: 8px;
-    }
-
-    #status {
-      white-space: pre-wrap;
-      font-family: monospace;
-      font-size: 13px;
-      line-height: 1.5;
-      color: #bbb;
-    }
-
-    #audioTracks {
       margin-top: 10px;
     }
-
-    .track {
-      display: block;
+    video {
       width: 100%;
-      text-align: left;
-      margin: 6px 0;
-      background: #292929;
-      border: 1px solid #444;
+      height: 100%;
+      display: block;
+      background: #000;
     }
-
-    .track.active {
-      background: #2d7ff9;
+    .controls {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0));
+      padding: 10px 12px 12px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
     }
-
-    .small {
-      color: #888;
-      font-size: 12px;
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    select {
+      background: #0f141b;
+      color: var(--text);
+      border: 1px solid #2a3441;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 13px;
+      min-width: 140px;
+    }
+    .note {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .error {
       margin-top: 8px;
+      font-size: 13px;
+      color: #f87171;
     }
-  </style></head><body>  <div class="version">VIDAA PLAYER v3.0.0</div>  <div class="player-wrap"><h1>Seedr MKV → Video.js Test</h1>
+  </style>
+  <!-- hls.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js"></script>
+</head>
+<body>
+  <div class="version">Version 1.0.0</div>
 
-<div class="url-row">
-  <input
-    id="url"
-    type="text"
-    placeholder="Paste your complete Seedr MKV URL here"
-    autocomplete="off"
-  >
+  <div class="container">
+    <h1>Seedr-style HLS Player</h1>
 
-  <button id="loadBtn">LOAD</button>
-</div>
+    <div class="input-row">
+      <input id="streamUrl" type="url" placeholder="Paste your Seedr HLS .m3u8 URL here" />
+      <button id="loadBtn" class="primary">Load Stream</button>
+    </div>
 
-<video
-  id="player"
-  class="video-js vjs-big-play-centered"
-  controls
-  playsinline
-  preload="auto"
-  crossorigin="anonymous"
-></video>
+    <div class="player-wrapper">
+      <video id="video" controls playsinline></video>
+      <div class="controls">
+        <div class="control-group">
+          <label for="audioSelect">Audio</label>
+          <select id="audioSelect">
+            <option value="-1">Auto / Default</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="subSelect">Subtitles</label>
+          <select id="subSelect">
+            <option value="-1">Off</option>
+          </select>
+        </div>
+      </div>
+    </div>
 
-<div class="panel">
-  <strong>Status</strong>
-  <div id="status">Waiting for URL...</div>
-</div>
+    <div id="errorBox" class="error"></div>
 
-<div class="panel">
-  <strong>Audio Tracks</strong>
-  <div id="audioTracks">
-    No tracks detected yet.
+    <div class="note">
+      This player uses hls.js to play HLS streams (like Seedr V2). Paste your signed Seedr HLS URL, then use the Audio and Subtitles menus to switch tracks. Do not commit your real Seedr URL to GitHub; paste it in the browser instead. [3][4][7][21]
+    </div>
   </div>
 
-  <div class="small">
-    If the MKV exposes multiple audio streams to the browser,
-    they should appear here.
-  </div>
-</div>
+  <script>
+    const video = document.getElementById('video');
+    const streamUrlInput = document.getElementById('streamUrl');
+    const loadBtn = document.getElementById('loadBtn');
+    const audioSelect = document.getElementById('audioSelect');
+    const subSelect = document.getElementById('subSelect');
+    const errorBox = document.getElementById('errorBox');
 
-  </div>  <script src="https://vjs.zencdn.net/8.23.4/video.min.js"></script>  <script>
-    const urlInput = document.getElementById("url");
-    const loadBtn = document.getElementById("loadBtn");
-    const status = document.getElementById("status");
-    const audioTracksDiv = document.getElementById("audioTracks");
+    let hls = null;
 
-    let player = null;
-
-    function log(message) {
-      status.textContent += "\n" + message;
-      console.log(message);
+    function showError(msg) {
+      errorBox.textContent = msg || '';
     }
 
-    function setStatus(message) {
-      status.textContent = message;
-      console.log(message);
+    function destroyHls() {
+      if (hls) {
+        hls.destroy();
+        hls = null;
+      }
     }
 
-    function showAudioTracks() {
-      audioTracksDiv.innerHTML = "";
+    function populateAudioTracks(audioTracks) {
+      audioSelect.innerHTML = '';
+      const defaultOption = document.createElement('option');
+      defaultOption.value = '-1';
+      defaultOption.textContent = 'Auto / Default';
+      audioSelect.appendChild(defaultOption);
 
-      if (!player) {
-        audioTracksDiv.textContent = "Player not created.";
+      if (!audioTracks || audioTracks.length === 0) {
+        audioSelect.disabled = true;
         return;
       }
 
-      const tracks = player.audioTracks();
+      audioSelect.disabled = false;
+      audioTracks.forEach((track, index) => {
+        const opt = document.createElement('option');
+        opt.value = String(index);
+        // Prefer name + language if present
+        const labelParts = [];
+        if (track.name) labelParts.push(track.name);
+        if (track.lang) labelParts.push('(' + track.lang + ')');
+        opt.textContent = labelParts.join(' ') || ('Track ' + (index + 1));
+        if (track.default) {
+          opt.selected = true;
+          audioSelect.value = String(index);
+        }
+        audioSelect.appendChild(opt);
+      });
+    }
 
-      log("Video.js audioTracks count: " + tracks.length);
+    function populateSubtitleTracks(subtitleTracks) {
+      subSelect.innerHTML = '';
+      const offOption = document.createElement('option');
+      offOption.value = '-1';
+      offOption.textContent = 'Off';
+      subSelect.appendChild(offOption);
 
-      if (!tracks.length) {
-        audioTracksDiv.textContent =
-          "No audio tracks exposed by Video.js.";
+      if (!subtitleTracks || subtitleTracks.length === 0) {
+        subSelect.disabled = true;
         return;
       }
 
-      for (let i = 0; i < tracks.length; i++) {
-
-        const track = tracks[i];
-
-        const button = document.createElement("button");
-        button.className = "track";
-
-        const label =
-          track.label ||
-          track.language ||
-          ("Audio Track " + (i + 1));
-
-        button.textContent =
-          (i + 1) + ". " +
-          label +
-          (track.language ? " [" + track.language + "]" : "");
-
-        if (track.enabled) {
-          button.classList.add("active");
+      subSelect.disabled = false;
+      subtitleTracks.forEach((track, index) => {
+        const opt = document.createElement('option');
+        opt.value = String(index);
+        const labelParts = [];
+        if (track.name) labelParts.push(track.name);
+        if (track.lang) labelParts.push('(' + track.lang + ')');
+        opt.textContent = labelParts.join(' ') || ('Subtitle ' + (index + 1));
+        if (track.default) {
+          opt.selected = true;
+          subSelect.value = String(index);
         }
-
-        button.onclick = function() {
-
-          for (let j = 0; j < tracks.length; j++) {
-            tracks[j].enabled = false;
-          }
-
-          track.enabled = true;
-
-          showAudioTracks();
-
-          log("Selected audio track: " + label);
-        };
-
-        audioTracksDiv.appendChild(button);
-      }
+        subSelect.appendChild(opt);
+      });
     }
 
-    function createPlayer(url) {
-
-      if (player) {
-        try {
-          player.dispose();
-        } catch (e) {}
-      }
-
-      audioTracksDiv.textContent = "Loading...";
-
-      setStatus("Creating Video.js player...");
-
-      player = videojs("player", {
-        controls: true,
-        preload: "auto",
-        fluid: true,
-        autoplay: false,
-        liveui: false
-      });
-
-      player.on("loadstart", function() {
-        log("Load started.");
-      });
-
-      player.on("loadedmetadata", function() {
-        log("Metadata loaded.");
-        log("Duration: " + player.duration());
-
-        setTimeout(showAudioTracks, 500);
-      });
-
-      player.on("loadeddata", function() {
-        log("Video data loaded.");
-      });
-
-      player.on("canplay", function() {
-        log("Video can play.");
-      });
-
-      player.on("play", function() {
-        log("Playback started.");
-      });
-
-      player.on("error", function() {
-
-        const error = player.error();
-
-        if (error) {
-          log(
-            "PLAYER ERROR: " +
-            error.code +
-            " - " +
-            error.message
-          );
-        } else {
-          log("PLAYER ERROR: unknown");
-        }
-      });
-
-      player.on("audioTrackChange", function() {
-        log("Audio track changed.");
-        showAudioTracks();
-      });
-
-      setStatus("Loading Seedr MKV...");
-
-      player.src({
-        src: url,
-        type: "video/x-matroska"
-      });
-
-      player.load();
-
-      log("Source:");
-      log(url.split("?")[0]);
-
-      log("Waiting for browser to decode MKV...");
-    }
-
-    loadBtn.addEventListener("click", function() {
-
-      const url = urlInput.value.trim();
+    function loadStream(url) {
+      destroyHls();
+      showError('');
 
       if (!url) {
-        alert("Paste the complete Seedr MKV URL first.");
+        showError('Please paste a valid HLS URL.');
         return;
       }
 
-      createPlayer(url);
-    });
+      if (Hls.isSupported()) {
+        hls = new Hls({
+          // Basic config similar in spirit to what you observed on Seedr
+          maxBufferLength: 120,
+          maxMaxBufferLength: 320,
+          startFragPrefetch: true,
+          backBufferLength: 90
+        });
 
-    urlInput.addEventListener("keydown", function(event) {
+        hls.loadSource(url);
+        hls.attachMedia(video);
 
-      if (event.key === "Enter") {
-        loadBtn.click();
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          populateAudioTracks(hls.audioTracks || []);
+          populateSubtitleTracks(hls.subtitleTracks || []);
+          video.play().catch(() => {});
+        });
+
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          if (data && data.fatal) {
+            showError('Player error: ' + (data.details || 'unknown'));
+          }
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // Native HLS (Safari, some TV browsers)
+        video.src = url;
+        video.addEventListener('loadedmetadata', () => {
+          // Native audio/subtitle tracks may appear as video.audioTracks / textTracks
+          // This is a simple fallback; detailed track control depends on the browser.
+        });
+        video.play().catch(() => {});
+      } else {
+        showError('HLS playback is not supported in this browser.');
       }
+    }
 
+    loadBtn.addEventListener('click', () => {
+      const url = streamUrlInput.value.trim();
+      loadStream(url);
     });
 
-  </script></body>
+    // Allow pressing Enter in the input box
+    streamUrlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const url = streamUrlInput.value.trim();
+        loadStream(url);
+      }
+    });
+
+    audioSelect.addEventListener('change', () => {
+      if (!hls) return;
+      const idx = parseInt(audioSelect.value, 10);
+      if (Number.isFinite(idx) && idx >= 0 && idx < (hls.audioTracks || []).length) {
+        hls.audioTrack = idx;
+      }
+    });
+
+    subSelect.addEventListener('change', () => {
+      if (!hls) return;
+      const idx = parseInt(subSelect.value, 10);
+      if (Number.isFinite(idx) && idx >= -1) {
+        if (idx === -1) {
+          hls.subtitleTrack = -1;
+          hls.subtitleDisplay = false;
+        } else if (idx < (hls.subtitleTracks || []).length) {
+          hls.subtitleTrack = idx;
+          hls.subtitleDisplay = true;
+        }
+      }
+    });
+  </script>
+</body>
 </html>
