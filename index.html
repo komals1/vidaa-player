@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Vidaa Player (Seedr-style HLS)</title>
+  <title>Vidaa Player (MKV/MP4)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     :root {
@@ -126,17 +126,15 @@
       color: #f87171;
     }
   </style>
-  <!-- hls.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js"></script>
 </head>
 <body>
-  <div class="version">Version 1.0.0</div>
+  <div class="version">Version 1.1.0</div>
 
   <div class="container">
-    <h1>Seedr-style HLS Player</h1>
+    <h1>Seedr MKV/MP4 Player</h1>
 
     <div class="input-row">
-      <input id="streamUrl" type="url" placeholder="Paste your Seedr HLS .m3u8 URL here" />
+      <input id="streamUrl" type="url" placeholder="Paste your Seedr .mkv or .mp4 URL here" />
       <button id="loadBtn" class="primary">Load Stream</button>
     </div>
 
@@ -146,7 +144,7 @@
         <div class="control-group">
           <label for="audioSelect">Audio</label>
           <select id="audioSelect">
-            <option value="-1">Auto / Default</option>
+            <option value="-1">Default</option>
           </select>
         </div>
         <div class="control-group">
@@ -161,7 +159,7 @@
     <div id="errorBox" class="error"></div>
 
     <div class="note">
-      This player uses hls.js to play HLS streams (like Seedr V2). Paste your signed Seedr HLS URL, then use the Audio and Subtitles menus to switch tracks. Do not commit your real Seedr URL to GitHub; paste it in the browser instead. [3][4][7][21]
+      This player tries to play direct MKV/MP4 URLs in the browser. Multi‑audio and subtitle support depend on what your browser exposes. For reliable multi‑audio switching, HLS (like Seedr V2) is required. [45][50][53]
     </div>
   </div>
 
@@ -173,119 +171,110 @@
     const subSelect = document.getElementById('subSelect');
     const errorBox = document.getElementById('errorBox');
 
-    let hls = null;
-
     function showError(msg) {
       errorBox.textContent = msg || '';
     }
 
-    function destroyHls() {
-      if (hls) {
-        hls.destroy();
-        hls = null;
-      }
-    }
-
-    function populateAudioTracks(audioTracks) {
+    function populateAudioTracks() {
       audioSelect.innerHTML = '';
       const defaultOption = document.createElement('option');
       defaultOption.value = '-1';
-      defaultOption.textContent = 'Auto / Default';
+      defaultOption.textContent = 'Default';
       audioSelect.appendChild(defaultOption);
 
-      if (!audioTracks || audioTracks.length === 0) {
+      const tracks = video.audioTracks || [];
+      if (!tracks.length) {
         audioSelect.disabled = true;
         return;
       }
 
       audioSelect.disabled = false;
-      audioTracks.forEach((track, index) => {
+      for (let i = 0; i < tracks.length; i++) {
+        const track = tracks[i];
         const opt = document.createElement('option');
-        opt.value = String(index);
-        // Prefer name + language if present
-        const labelParts = [];
-        if (track.name) labelParts.push(track.name);
-        if (track.lang) labelParts.push('(' + track.lang + ')');
-        opt.textContent = labelParts.join(' ') || ('Track ' + (index + 1));
-        if (track.default) {
+        opt.value = String(i);
+        opt.textContent = (track.label || track.language || ('Track ' + (i + 1)));
+        if (track.enabled) {
           opt.selected = true;
-          audioSelect.value = String(index);
+          audioSelect.value = String(i);
         }
         audioSelect.appendChild(opt);
-      });
+      }
     }
 
-    function populateSubtitleTracks(subtitleTracks) {
+    function populateSubtitleTracks() {
       subSelect.innerHTML = '';
       const offOption = document.createElement('option');
       offOption.value = '-1';
       offOption.textContent = 'Off';
       subSelect.appendChild(offOption);
 
-      if (!subtitleTracks || subtitleTracks.length === 0) {
+      const tracks = video.textTracks || [];
+      if (!tracks.length) {
         subSelect.disabled = true;
         return;
       }
 
       subSelect.disabled = false;
-      subtitleTracks.forEach((track, index) => {
+      for (let i = 0; i < tracks.length; i++) {
+        const track = tracks[i];
         const opt = document.createElement('option');
-        opt.value = String(index);
+        opt.value = String(i);
         const labelParts = [];
-        if (track.name) labelParts.push(track.name);
-        if (track.lang) labelParts.push('(' + track.lang + ')');
-        opt.textContent = labelParts.join(' ') || ('Subtitle ' + (index + 1));
-        if (track.default) {
+        if (track.label) labelParts.push(track.label);
+        if (track.language) labelParts.push('(' + track.language + ')');
+        if (track.kind) labelParts.push('[' + track.kind + ']');
+        opt.textContent = labelParts.join(' ') || ('Subtitle ' + (i + 1));
+        if (track.mode === 'showing') {
           opt.selected = true;
-          subSelect.value = String(index);
+          subSelect.value = String(i);
         }
         subSelect.appendChild(opt);
-      });
+      }
+    }
+
+    function updateTrackMenusOnceLoaded() {
+      // Wait until metadata is loaded so tracks are available
+      if (video.readyState >= 1) {
+        populateAudioTracks();
+        populateSubtitleTracks();
+      }
     }
 
     function loadStream(url) {
-      destroyHls();
       showError('');
-
       if (!url) {
-        showError('Please paste a valid HLS URL.');
+        showError('Please paste a valid .mkv or .mp4 URL.');
         return;
       }
 
-      if (Hls.isSupported()) {
-        hls = new Hls({
-          // Basic config similar in spirit to what you observed on Seedr
-          maxBufferLength: 120,
-          maxMaxBufferLength: 320,
-          startFragPrefetch: true,
-          backBufferLength: 90
-        });
+      // Reset
+      video.pause();
+      video.src = '';
+      video.load();
+      audioSelect.innerHTML = '<option value="-1">Default</option>';
+      subSelect.innerHTML = '<option value="-1">Off</option>';
+      audioSelect.disabled = true;
+      subSelect.disabled = true;
 
-        hls.loadSource(url);
-        hls.attachMedia(video);
-
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          populateAudioTracks(hls.audioTracks || []);
-          populateSubtitleTracks(hls.subtitleTracks || []);
-          video.play().catch(() => {});
-        });
-
-        hls.on(Hls.Events.ERROR, (event, data) => {
-          if (data && data.fatal) {
-            showError('Player error: ' + (data.details || 'unknown'));
-          }
-        });
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        // Native HLS (Safari, some TV browsers)
-        video.src = url;
-        video.addEventListener('loadedmetadata', () => {
-          // Native audio/subtitle tracks may appear as video.audioTracks / textTracks
-          // This is a simple fallback; detailed track control depends on the browser.
-        });
+      video.src = url;
+      video.addEventListener('loadedmetadata', () => {
+        updateTrackMenusOnceLoaded();
         video.play().catch(() => {});
-      } else {
-        showError('HLS playback is not supported in this browser.');
-      }
+      }, { once: true });
+
+      video.addEventListener('error', () => {
+        const err = video.error;
+        if (err) {
+          let msg = 'Playback error: ';
+          if (err.code === 4) msg += 'format not supported';
+          else if (err.code === 1) msg += 'aborted';
+          else if (err.code === 2) msg += 'network';
+          else if (err.code === 3) msg += 'decode';
+          else msg += 'unknown';
+          showError(msg);
+        }
+      });
     }
 
     loadBtn.addEventListener('click', () => {
@@ -293,7 +282,6 @@
       loadStream(url);
     });
 
-    // Allow pressing Enter in the input box
     streamUrlInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         const url = streamUrlInput.value.trim();
@@ -302,24 +290,23 @@
     });
 
     audioSelect.addEventListener('change', () => {
-      if (!hls) return;
+      const tracks = video.audioTracks;
+      if (!tracks || !tracks.length) return;
       const idx = parseInt(audioSelect.value, 10);
-      if (Number.isFinite(idx) && idx >= 0 && idx < (hls.audioTracks || []).length) {
-        hls.audioTrack = idx;
+      if (!Number.isFinite(idx) || idx < 0) return;
+
+      for (let i = 0; i < tracks.length; i++) {
+        tracks[i].enabled = (i === idx);
       }
     });
 
     subSelect.addEventListener('change', () => {
-      if (!hls) return;
+      const tracks = video.textTracks;
+      if (!tracks || !tracks.length) return;
       const idx = parseInt(subSelect.value, 10);
-      if (Number.isFinite(idx) && idx >= -1) {
-        if (idx === -1) {
-          hls.subtitleTrack = -1;
-          hls.subtitleDisplay = false;
-        } else if (idx < (hls.subtitleTracks || []).length) {
-          hls.subtitleTrack = idx;
-          hls.subtitleDisplay = true;
-        }
+
+      for (let i = 0; i < tracks.length; i++) {
+        tracks[i].mode = (i === idx) ? 'showing' : 'hidden';
       }
     });
   </script>
