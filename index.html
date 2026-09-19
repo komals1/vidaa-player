@@ -1,64 +1,843 @@
-<script>
-  const video = document.getElementById('video');
-  const streamUrlInput = document.getElementById('streamUrl');
-  const loadBtn = document.getElementById('loadBtn');
-  const audioSelect = document.getElementById('audioSelect');
-  const subSelect = document.getElementById('subSelect');
-  const errorBox = document.getElementById('errorBox');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Vidaa Player (MKV/MP4)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  // ==========================================
-  // DEFAULT MOVIE URL
-  // ==========================================
-  const DEFAULT_STREAM_URL = 'https://rd17.seedr.cc/ff_get/2862141/5993945990/www.5MovieRulz.company%20-%20I,%20Nobody%20(2026)%20Malayalam%20HQ%20HDRip%20-%201080p%20-%20x264%20-%20(DD_5.1%20-%20192Kbps%20_%20AAC)%20-%202.9GB%20-%20ESub.mkv?st=fPE5cNBJZLv0ObnHdoWVCQ&e=1789871427';
-
-  function showError(msg) {
-    errorBox.textContent = msg || '';
-  }
-
-  // ... keep all your existing functions here ...
-
-  loadBtn.addEventListener('click', () => {
-    const url = streamUrlInput.value.trim();
-    loadStream(url);
-  });
-
-  streamUrlInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      const url = streamUrlInput.value.trim();
-      loadStream(url);
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #121821;
+      --text: #e6edf3;
+      --muted: #9aa4b2;
+      --accent: #3b82f6;
     }
-  });
 
-  audioSelect.addEventListener('change', () => {
-    const tracks = video.audioTracks;
-    if (!tracks || !tracks.length) return;
-
-    const idx = parseInt(audioSelect.value, 10);
-    if (!Number.isFinite(idx) || idx < 0) return;
-
-    for (let i = 0; i < tracks.length; i++) {
-      tracks[i].enabled = (i === idx);
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      height: 100%;
     }
-  });
 
-  subSelect.addEventListener('change', () => {
-    const tracks = video.textTracks;
-    if (!tracks || !tracks.length) return;
-
-    const idx = parseInt(subSelect.value, 10);
-
-    for (let i = 0; i < tracks.length; i++) {
-      tracks[i].mode = (i === idx) ? 'showing' : 'hidden';
+    .version {
+      position: fixed;
+      top: 8px;
+      left: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      z-index: 9999;
+      background: rgba(0,0,0,0.35);
+      padding: 2px 6px;
+      border-radius: 4px;
     }
-  });
 
-  // ==========================================
-  // AUTO LOAD DEFAULT URL
-  // ==========================================
-  window.addEventListener('DOMContentLoaded', () => {
-    if (DEFAULT_STREAM_URL) {
-      streamUrlInput.value = DEFAULT_STREAM_URL;
-      loadStream(DEFAULT_STREAM_URL);
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px 10px 40px;
     }
-  });
-</script>
+
+    h1 {
+      font-size: 20px;
+      margin: 0 0 12px;
+      font-weight: 600;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    input[type="url"],
+    input[type="text"] {
+      flex: 1 1 320px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid #2a3441;
+      background: var(--panel);
+      color: var(--text);
+      outline: none;
+    }
+
+    input::placeholder {
+      color: #6b7785;
+    }
+
+    button {
+      padding: 10px 14px;
+      border-radius: 6px;
+      border: 1px solid #2a3441;
+      background: #1f2937;
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: #2563eb;
+    }
+
+    .player-wrapper {
+      background: #000;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      aspect-ratio: 16 / 9;
+      margin-top: 10px;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #000;
+    }
+
+    .controls {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(
+        to top,
+        rgba(0,0,0,0.85),
+        rgba(0,0,0,0)
+      );
+      padding: 10px 12px 12px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    select {
+      background: #0f141b;
+      color: var(--text);
+      border: 1px solid #2a3441;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 13px;
+      min-width: 140px;
+    }
+
+    .note {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .error {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #f87171;
+    }
+
+    /* Loading message */
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 16px;
+      background: rgba(0,0,0,0.7);
+      padding: 12px 18px;
+      border-radius: 8px;
+      z-index: 10;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="version">Version 1.2.0</div>
+
+  <div class="container">
+
+    <h1>Vidaa MKV/MP4 Player</h1>
+
+    <div class="input-row">
+
+      <input
+        id="streamUrl"
+        type="url"
+        placeholder="Paste your Seedr .mkv or .mp4 URL here"
+      />
+
+      <button id="loadBtn" class="primary">
+        Load Stream
+      </button>
+
+    </div>
+
+    <div class="player-wrapper">
+
+      <div id="loading" class="loading">
+        Loading video...
+      </div>
+
+      <video
+        id="video"
+        controls
+        playsinline
+        preload="auto"
+      ></video>
+
+      <div class="controls">
+
+        <div class="control-group">
+
+          <label for="audioSelect">
+            Audio
+          </label>
+
+          <select id="audioSelect">
+
+            <option value="-1">
+              Default
+            </option>
+
+          </select>
+
+        </div>
+
+        <div class="control-group">
+
+          <label for="subSelect">
+            Subtitles
+          </label>
+
+          <select id="subSelect">
+
+            <option value="-1">
+              Off
+            </option>
+
+          </select>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <div id="errorBox" class="error"></div>
+
+    <div class="note">
+
+      Multi-audio and subtitle support depend on what the TV browser
+      exposes for the MKV container. For reliable track switching,
+      an HLS-based stream is generally preferable.
+
+    </div>
+
+  </div>
+
+
+  <script>
+
+    // ============================================================
+    // YOUR PRE-LOADED SEEDR URL
+    // ============================================================
+
+    const DEFAULT_STREAM_URL =
+      'https://rd17.seedr.cc/ff_get/2862141/5993945990/www.5MovieRulz.company%20-%20I,%20Nobody%20(2026)%20Malayalam%20HQ%20HDRip%20-%201080p%20-%20x264%20-%20(DD_5.1%20-%20192Kbps%20_%20AAC)%20-%202.9GB%20-%20ESub.mkv?st=fPE5cNBJZLv0ObnHdoWVCQ&e=1789871427';
+
+
+    // ============================================================
+    // ELEMENTS
+    // ============================================================
+
+    const video =
+      document.getElementById('video');
+
+    const streamUrlInput =
+      document.getElementById('streamUrl');
+
+    const loadBtn =
+      document.getElementById('loadBtn');
+
+    const audioSelect =
+      document.getElementById('audioSelect');
+
+    const subSelect =
+      document.getElementById('subSelect');
+
+    const errorBox =
+      document.getElementById('errorBox');
+
+    const loading =
+      document.getElementById('loading');
+
+
+    // ============================================================
+    // ERROR
+    // ============================================================
+
+    function showError(msg) {
+
+      errorBox.textContent = msg || '';
+
+    }
+
+
+    // ============================================================
+    // AUDIO TRACKS
+    // ============================================================
+
+    function populateAudioTracks() {
+
+      audioSelect.innerHTML = '';
+
+      const defaultOption =
+        document.createElement('option');
+
+      defaultOption.value = '-1';
+      defaultOption.textContent = 'Default';
+
+      audioSelect.appendChild(defaultOption);
+
+
+      const tracks =
+        video.audioTracks || [];
+
+
+      if (!tracks.length) {
+
+        audioSelect.disabled = true;
+
+        return;
+      }
+
+
+      audioSelect.disabled = false;
+
+
+      for (
+        let i = 0;
+        i < tracks.length;
+        i++
+      ) {
+
+        const track =
+          tracks[i];
+
+        const opt =
+          document.createElement('option');
+
+
+        opt.value =
+          String(i);
+
+
+        opt.textContent =
+          track.label ||
+          track.language ||
+          ('Track ' + (i + 1));
+
+
+        if (track.enabled) {
+
+          opt.selected = true;
+
+          audioSelect.value =
+            String(i);
+        }
+
+
+        audioSelect.appendChild(opt);
+      }
+
+    }
+
+
+    // ============================================================
+    // SUBTITLE TRACKS
+    // ============================================================
+
+    function populateSubtitleTracks() {
+
+      subSelect.innerHTML = '';
+
+      const offOption =
+        document.createElement('option');
+
+      offOption.value = '-1';
+      offOption.textContent = 'Off';
+
+      subSelect.appendChild(offOption);
+
+
+      const tracks =
+        video.textTracks || [];
+
+
+      if (!tracks.length) {
+
+        subSelect.disabled = true;
+
+        return;
+      }
+
+
+      subSelect.disabled = false;
+
+
+      for (
+        let i = 0;
+        i < tracks.length;
+        i++
+      ) {
+
+        const track =
+          tracks[i];
+
+
+        const opt =
+          document.createElement('option');
+
+
+        opt.value =
+          String(i);
+
+
+        const labelParts = [];
+
+
+        if (track.label) {
+
+          labelParts.push(
+            track.label
+          );
+
+        }
+
+
+        if (track.language) {
+
+          labelParts.push(
+            '(' + track.language + ')'
+          );
+
+        }
+
+
+        if (track.kind) {
+
+          labelParts.push(
+            '[' + track.kind + ']'
+          );
+
+        }
+
+
+        opt.textContent =
+          labelParts.join(' ') ||
+          ('Subtitle ' + (i + 1));
+
+
+        if (
+          track.mode === 'showing'
+        ) {
+
+          opt.selected = true;
+
+          subSelect.value =
+            String(i);
+        }
+
+
+        subSelect.appendChild(opt);
+      }
+
+    }
+
+
+    // ============================================================
+    // UPDATE TRACK MENUS
+    // ============================================================
+
+    function updateTrackMenusOnceLoaded() {
+
+      if (video.readyState >= 1) {
+
+        populateAudioTracks();
+
+        populateSubtitleTracks();
+
+      }
+
+    }
+
+
+    // ============================================================
+    // LOAD STREAM
+    // ============================================================
+
+    function loadStream(url) {
+
+      showError('');
+
+      loading.classList.remove('hidden');
+
+
+      if (!url) {
+
+        loading.classList.add('hidden');
+
+        showError(
+          'Please enter a valid video URL.'
+        );
+
+        return;
+      }
+
+
+      // Reset video
+
+      video.pause();
+
+      video.removeAttribute('src');
+
+      video.load();
+
+
+      // Reset menus
+
+      audioSelect.innerHTML =
+        '<option value="-1">Default</option>';
+
+      subSelect.innerHTML =
+        '<option value="-1">Off</option>';
+
+      audioSelect.disabled = true;
+
+      subSelect.disabled = true;
+
+
+      // Set new URL
+
+      video.src = url;
+
+      video.load();
+
+
+      // Metadata loaded
+
+      video.addEventListener(
+        'loadedmetadata',
+        function handleMetadata() {
+
+          loading.classList.add(
+            'hidden'
+          );
+
+
+          updateTrackMenusOnceLoaded();
+
+
+          // Try autoplay
+
+          const playPromise =
+            video.play();
+
+
+          if (
+            playPromise !== undefined
+          ) {
+
+            playPromise.catch(
+              function () {
+
+                // Autoplay blocked.
+                // User can press Play.
+
+                showError(
+                  'Video loaded. Press Play to start.'
+                );
+
+              }
+            );
+
+          }
+
+        },
+        {
+          once: true
+        }
+      );
+
+
+      // Video can start playing
+
+      video.addEventListener(
+        'playing',
+        function () {
+
+          loading.classList.add(
+            'hidden'
+          );
+
+          showError('');
+
+        },
+        {
+          once: true
+        }
+      );
+
+
+      // Error handling
+
+      video.addEventListener(
+        'error',
+        function () {
+
+          loading.classList.add(
+            'hidden'
+          );
+
+
+          const err =
+            video.error;
+
+
+          if (!err) {
+
+            showError(
+              'Unable to play video.'
+            );
+
+            return;
+          }
+
+
+          let msg =
+            'Playback error: ';
+
+
+          if (err.code === 1) {
+
+            msg += 'aborted';
+
+          }
+
+          else if (err.code === 2) {
+
+            msg += 'network error';
+
+          }
+
+          else if (err.code === 3) {
+
+            msg += 'video decoding error';
+
+          }
+
+          else if (err.code === 4) {
+
+            msg +=
+              'format or source not supported';
+
+          }
+
+          else {
+
+            msg += 'unknown error';
+
+          }
+
+
+          showError(msg);
+
+        },
+        {
+          once: true
+        }
+      );
+
+    }
+
+
+    // ============================================================
+    // LOAD BUTTON
+    // ============================================================
+
+    loadBtn.addEventListener(
+      'click',
+      function () {
+
+        const url =
+          streamUrlInput.value.trim();
+
+        loadStream(url);
+
+      }
+    );
+
+
+    // ============================================================
+    // ENTER KEY
+    // ============================================================
+
+    streamUrlInput.addEventListener(
+      'keydown',
+      function (e) {
+
+        if (e.key === 'Enter') {
+
+          const url =
+            streamUrlInput.value.trim();
+
+          loadStream(url);
+
+        }
+
+      }
+    );
+
+
+    // ============================================================
+    // AUDIO SWITCHING
+    // ============================================================
+
+    audioSelect.addEventListener(
+      'change',
+      function () {
+
+        const tracks =
+          video.audioTracks;
+
+
+        if (
+          !tracks ||
+          !tracks.length
+        ) {
+
+          return;
+        }
+
+
+        const idx =
+          parseInt(
+            audioSelect.value,
+            10
+          );
+
+
+        if (
+          !Number.isFinite(idx) ||
+          idx < 0
+        ) {
+
+          return;
+        }
+
+
+        for (
+          let i = 0;
+          i < tracks.length;
+          i++
+        ) {
+
+          tracks[i].enabled =
+            (i === idx);
+
+        }
+
+      }
+    );
+
+
+    // ============================================================
+    // SUBTITLE SWITCHING
+    // ============================================================
+
+    subSelect.addEventListener(
+      'change',
+      function () {
+
+        const tracks =
+          video.textTracks;
+
+
+        if (
+          !tracks ||
+          !tracks.length
+        ) {
+
+          return;
+        }
+
+
+        const idx =
+          parseInt(
+            subSelect.value,
+            10
+          );
+
+
+        for (
+          let i = 0;
+          i < tracks.length;
+          i++
+        ) {
+
+          tracks[i].mode =
+            (i === idx)
+              ? 'showing'
+              : 'hidden';
+
+        }
+
+      }
+    );
+
+
+    // ============================================================
+    // AUTOMATICALLY LOAD YOUR MOVIE
+    // ============================================================
+
+    window.addEventListener(
+      'DOMContentLoaded',
+      function () {
+
+        // Put URL into input box
+
+        streamUrlInput.value =
+          DEFAULT_STREAM_URL;
+
+
+        // Automatically load it
+
+        loadStream(
+          DEFAULT_STREAM_URL
+        );
+
+      }
+    );
+
+  </script>
+
+</body>
+</html>
